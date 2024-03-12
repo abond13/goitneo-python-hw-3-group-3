@@ -1,6 +1,12 @@
 """
     Домашнє завдання №3
 """
+import re
+from prompt_toolkit import PromptSession
+from prompt_toolkit.completion import NestedCompleter
+#from prompt_toolkit.completion import WordCompleter
+#from prompt_toolkit.history import InMemoryHistory
+#from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 import AddressBook as AB
 
 def input_error(func):
@@ -22,7 +28,10 @@ def input_error(func):
     return inner
 
 def parse_input(user_input):
-    cmd, *args = user_input.split()
+    def line_split(line):
+        return re.findall(r'[^"\s]\S*|".+?"', line)
+    #cmd, *args = user_input.split()
+    cmd, *args = line_split(user_input)
     cmd = cmd.strip().lower()
     return cmd, *args
 
@@ -95,11 +104,49 @@ def show_birthday(args, book):
 def birthdays(book):
     book.get_birthdays_per_week()
 
+# completer = WordCompleter(
+#     [
+#         "close", "exit", "quit", "вийти",
+#         "help", "?", "допомога",
+#         "add", "додати",
+#         "change", "змінити",
+#         "phone", "телефон",
+#         "add-birthday", "додати–дн",
+#         "show-birthday", "показати-дн",
+#         "birthdays",
+#         "all", "показати-все",
+#     ],
+#     ignore_case=True,
+# )
+
 def main():
     book = AB.AddressBook()
+    session = PromptSession()
+
     print("Welcome to the assistant bot!")
     while True:
-        user_input = input("Enter a command: ")
+        book_completer = book.get_completer()
+        completer = NestedCompleter.from_nested_dict(
+            {
+                "show": {"birthday": book_completer, "all": None},
+                "add": None,
+                "change": book_completer,
+                "phone": book_completer,
+                "add-birthday": book_completer,
+                "show-birthday": book_completer,
+                "birthdays": None,
+                "all": None,
+                "help" :None, "?": None, "допомога": None,
+                "exit": None, "close": None, "quit": None, "вийти": None,
+            }
+        )
+        #user_input = input("Enter a command: ")
+        user_input = session.prompt(
+            "Enter a command: ", 
+            completer=completer,
+            complete_while_typing=False,
+            # auto_suggest=AutoSuggestFromHistory()
+        )
         if user_input:
             command, *args = parse_input(user_input)
         else:
@@ -107,23 +154,22 @@ def main():
         if command in ["close", "exit", "quit"]:
             print("Good bye!")
             break
-        if command == "hello":
-            print("How can I help you?")
-        elif command == "help":
+        if command in ["help", "?", "допомога"]:
             print(print_help())
-        elif command == "add":
+            print(completer)
+        elif command in ["add", "додати"]:
             print(add_contact(args, book))
-        elif command == "change":
+        elif command in ["change", "змінити"]:
             print(change_contact(args, book))
-        elif command == "phone":
+        elif command in ["phone", "телефон"]:
             print(phone(args, book))
-        elif command == "add-birthday":
+        elif command in ["add-birthday", "додати–дн"]:
             print(add_birthday(args, book))
-        elif command == "show-birthday":
+        elif command == ["show-birthday", "показати-дн"]:
             print(show_birthday(args,book))
         elif command == "birthdays":
             birthdays(book)
-        elif command == "all":
+        elif command in ["all", "показати-все"]:
             print(book)
         else:
             print("Invalid command.")

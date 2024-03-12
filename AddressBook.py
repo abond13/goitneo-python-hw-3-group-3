@@ -38,7 +38,7 @@ class Name(Field):
                 Наприклад: Al
     """
     def __init__(self, name):
-        if not re.fullmatch("[A-Z][a-z]+", name):
+        if not re.fullmatch(r'\"?[A-Z][a-z]+(\s[A-Z][a-z]+)?\"?', name):
             raise NameFormatError
         super().__init__(name)
 
@@ -50,7 +50,7 @@ class Phone(Field):
         2. Довжина повинна бути 10 символів.
     """
     def __init__(self, phone):
-        if not re.fullmatch("[0-9]{10}", phone):
+        if not re.fullmatch(r'[0-9]{10}', phone):
             raise PhoneFormatError
         super().__init__(phone)
 
@@ -110,7 +110,7 @@ class Record:
 
     def add_birthday(self, birthday):
         # Quick naїve check format
-        if not re.fullmatch("[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}", birthday):
+        if not re.fullmatch(r'[0-9]{2}\.[0-9]{2}\.[0-9]{4}', birthday):
             raise BirthdayFormatError
         day, month, year = birthday.split('.')
         # Strong check by creating a data object
@@ -135,6 +135,9 @@ class AddressBook(UserDict):
         if self.data.pop(name, None):
             return True
         return False
+
+    def get_completer(self):
+        return {key: None for key in sorted(self.data.keys())} or {"<Name>": None}
 
     def get_birthdays_per_week(self):
         """
@@ -189,6 +192,7 @@ def catch_my_exceptions(*exceptions):
 def main():
     # Створення нової адресної книги
     book = AddressBook()
+    print(book.get_completer())
 
     print("\nTest #1")
     with catch_my_exceptions(Exception):
@@ -269,5 +273,6 @@ def main():
     print(book)
     book.get_birthdays_per_week()
 
+    print(book.get_completer())
 if __name__ == "__main__":
     main()
